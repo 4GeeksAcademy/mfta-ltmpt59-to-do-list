@@ -4,6 +4,10 @@ import { useState } from "react";
 const Home = () => {
   const [newTodo, setNewTodo] = useState("");
   const [todoList, setTodoList] = useState([]);
+  const [editingTodo, setEditingTodo] = useState({
+    index: null,
+    label: "",
+  });
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -17,8 +21,29 @@ const Home = () => {
   };
 
   const deleteTodo = (index) => {
-	  setTodoList(todoList.filter((todo, i) => i !== index))
-  }
+    setTodoList(todoList.filter((todo, i) => i !== index));
+  };
+
+  const editTodo = (todo, index) => {
+    setEditingTodo({
+      index,
+      label: todo,
+    });
+  };
+
+  const updateTodo = (e) => {
+    if (e.code === "Enter") {
+      setTodoList((prev) =>
+        prev.map((todo, i) => {
+          return i !== editingTodo.index ? todo : editingTodo.label;
+        })
+      );
+      setEditingTodo({
+        index: null,
+        label: "",
+      });
+    }
+  };
 
   return (
     <div className="container-fluid d-flex flex-column align-items-center">
@@ -43,17 +68,42 @@ const Home = () => {
         </form>
         <ul className="list-group list-group-flush w-100 border">
           {todoList.map((todo, index) => {
-            return (
+            return editingTodo.index !== index ? (
               <li className="list-group-item d-flex" key={index}>
-                {todo} <button className="text-danger ms-auto btn hidden-button" onClick={() => deleteTodo(index)}>X</button>
+                {todo}
+                <button
+                  className="text-primary ms-auto btn hidden-button"
+                  onClick={() => editTodo(todo, index)}
+                >
+                  <i className="fa-solid fa-pencil"></i>
+                </button>
+                <button
+                  className="text-danger btn hidden-button"
+                  onClick={() => deleteTodo(index)}
+                >
+                  X
+                </button>
               </li>
+            ) : (
+              <input
+                key={index}
+                type="text"
+                value={editingTodo.label}
+                onChange={(e) =>
+                  setEditingTodo({ ...editingTodo, label: e.target.value })
+                }
+                onKeyDown={(event) => updateTodo(event)}
+                onBlur={() => setEditingTodo({ index: null, label: "" })}
+                autoFocus
+              />
             );
           })}
         </ul>
-        {
-          todoList.length > 0 &&
-          <p className="form-text">{`${todoList.length} ${todoList.length === 1 ? "item" : "items"} left`}</p>
-        }
+        {todoList.length > 0 && (
+          <p className="form-text">{`${todoList.length} ${
+            todoList.length === 1 ? "item" : "items"
+          } left`}</p>
+        )}
       </div>
     </div>
   );
