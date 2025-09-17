@@ -4,7 +4,6 @@ const apiBase = "https://playground.4geeks.com/todo";
 const userName = "tester25";
 
 const Home = () => {
-  const [userExist, setUserExist] = useState(false)
   const [newTodo, setNewTodo] = useState("");
   const [todoList, setTodoList] = useState([]);
   const [editingTodo, setEditingTodo] = useState({
@@ -16,16 +15,16 @@ const Home = () => {
     async function getTodos() {
       const response = await fetch(`${apiBase}/users/${userName}`)
       if (!response.ok) {
+        if (response.status === 400) {
+          createUser()
+        }
         throw new Error("Error al obtener los to-dos")
       }
       const data = await response.json();
-      setUserExist(true);
       setTodoList(data.todos)
     }
-    if (userExist) {
-      getTodos();
-    }
-  }, [userExist])
+    getTodos();
+  }, [])
 
   async function createUser() {
     try {
@@ -36,21 +35,38 @@ const Home = () => {
         throw new Error("Error al crear el usuario");
       }
       const user = await response.json();
-      setUserExist(true);
     } catch (error) {
       console.error(error.message);
     }
   }
 
+  async function addTodo(e) {
+     if (e.code === "Enter" && e.target.value.trim() !== "") {
+      try {
+        const response = await fetch(`${apiBase}/todos/${userName}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            label: newTodo,
+            is_done: false
+          })
+        })
+        if (!response.ok) {
+          throw new Error("Error al crear el to-do")
+        }
+        const data = await response.json()
+        setTodoList([...todoList, data]);
+        setNewTodo("");
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault();
-  };
-
-  const addTodo = (e) => {
-    if (e.code === "Enter" && e.target.value.trim() !== "") {
-      setTodoList([...todoList, newTodo]);
-      setNewTodo("");
-    }
   };
 
   const deleteTodo = (index) => {
@@ -81,14 +97,6 @@ const Home = () => {
   return (
     <div className="container-fluid d-flex flex-column align-items-center">
       <h1>todos</h1>
-
-      {
-        !userExist &&
-          <button className="btn btn-primary" onClick={createUser}>Create User</button>
-      }
-
-      {
-        userExist && 
           <div
             className="d-flex flex-column align-items-start w-100"
             style={{ maxWidth: "550px" }}
@@ -111,7 +119,7 @@ const Home = () => {
               {todoList.map((todo, index) => {
                 return editingTodo.index !== index ? (
                   <li className="list-group-item d-flex" key={index}>
-                    {todo}
+                    {todo.label}
                     <button
                       className="text-primary ms-auto btn hidden-button"
                       onClick={() => editTodo(todo, index)}
@@ -146,7 +154,6 @@ const Home = () => {
               } left`}</p>
             )}
           </div>
-      }
     </div>
   );
 };
